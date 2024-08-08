@@ -1,0 +1,6 @@
+This is a sample text.
+git testing.
+This is a test line FCS
+Adding a text for git testing
+****************
+Commiting and pushng a change RA

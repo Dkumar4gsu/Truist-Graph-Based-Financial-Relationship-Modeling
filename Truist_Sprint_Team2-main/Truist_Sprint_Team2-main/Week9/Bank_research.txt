@@ -1,0 +1,12 @@
+Lending Decisions: Credit score, income, employement history, debt-to-income ratio, etc.
+
+Factors influencing credit score:
+1. Payment history (on time or not)
+2. Credit Utilization (Usage compared to limit) -> high means lower score
+3. Length of history (How long account is open)
+4. Types of credit (different types that borrower has like credit cards, loans, mortgages)
+5. Recent inquiries (how many time borrower has applied for credit recently)
+
+Factors influencing risk score: Payment history, credit utilization, length of credit history,
+Types of credit, recent credit inquiries, income, debt-to-income ration, public records and other factors like
+age(specially for young), education, geographic location. 

@@ -1,0 +1,70 @@
+LOAD CSV WITH HEADERS FROM 
+'file:///product_synthetic_data.csv' AS row
+WITH row LIMIT 15
+CREATE (c:customer {customer_id: (row.customer_ID), age: ToFloat(row.age), product_name: (row.Product_Code), job: (row.job), marital: row.marital})
+
+MATCH (n1:customer), (n2:customer)
+WHERE n1.product_name = n2.product_name and n1 <> n2
+MERGE (n1)-[:uses_same_product {product : n1.product_name}]->(n2)
+
+MATCH (n1:customer), (n2:customer)
+WHERE n1.job = n2.job and n1 <> n2
+MERGE (n1)-[:has_same_job {job : n1.job}]->(n2)
+
+
+2.
+LOAD CSV WITH HEADERS FROM 
+'file:///product_synthetic_data.csv' AS row
+WITH row LIMIT 200
+CREATE (c:customer {customer_id: ToInteger(row.customer_ID), age: ToFloat(row.age)})
+MERGE (e:education {edu : row.education})
+MERGE (c)-[:studied]->(e)
+MERGE (j:job {job : row.job})
+MERGE (c)-[:works_as]->(j)
+MERGE (p:product {product : row.Product_Code})
+MERGE (c)-[:has_product]->(p)
+
+match (n:job {job:'technician'})<-[:works_as]-(c:customer)-[:has_product]->(p:product)
+WITH p.product as product_type, count(DISTINCT c) as customer_count1
+RETURN product_type, customer_count1
+
+
+3.
+LOAD CSV WITH HEADERS FROM 
+'file:///product_synthetic_data.csv' AS row
+WITH row,
+(CASE 
+    WHEN ToInteger(row.Term) <80 THEN 'Below 80'
+    WHEN ToInteger(row.Term) <100 THEN '80-100'
+    WHEN ToInteger(row.Term) <120 THEN '100-120'
+    WHEN ToInteger(row.Term) <140 THEN '120-140'
+    WHEN ToInteger(row.Term) <160 THEN '140-160'
+    ELSE 'Above 160'
+END) AS term_bin,
+(CASE 
+    WHEN ToInteger(row.Funded_Amount) < 50000 THEN 'Below 50k'
+    WHEN ToInteger(row.Funded_Amount) <150000 THEN '50k-150k'
+    WHEN ToInteger(row.Funded_Amount) <400000 THEN '150k-400k'
+    WHEN ToInteger(row.Funded_Amount) <5000000 THEN '150k-500k'
+    ELSE 'Above 500k'
+END) AS funded_bin   
+MERGE (tb:term {name: term_bin})
+ON CREATE SET tb.counts =1
+ON MATCH SET tb.counts = tb.counts + 1
+MERGE (pc:prod_code {prod: row.Product_Code})
+ON CREATE SET pc.counts =1
+ON MATCH SET pc.counts = pc.counts + 1
+MERGE (tb)-[r:Contains]->(pc)
+ON CREATE SET r.number =1
+ON MATCH SET r.number = r.number + 1
+MERGE (fb:fund_bin {bin_name: funded_bin})
+ON CREATE SET fb.counts =1
+ON MATCH SET fb.counts = fb.counts + 1
+MERGE (pc)-[s:Contains]->(fb)
+ON CREATE SET s.number =1
+ON MATCH SET s.number = s.number + 1
+MERGE (q:quarter {name: datetime(row.Start_Date).quarter})
+MERGE (q)-[v:funding]->(pc)
+ON CREATE SET v.counts = 1, v.sum_commit_amount = ToInteger(row.Commitment_Amount), v.avg_amount = ToInteger(row.Commitment_Amount)
+ON MATCH SET v.counts = v.counts + 1, v.sum_commit_amount = v.sum_commit_amount +  ToInteger(row.Commitment_Amount),  v.avg_amount  =  v.sum_commit_amount/v.counts
+
